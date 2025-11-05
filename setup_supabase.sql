@@ -78,6 +78,8 @@ BEGIN
 END;
 $$;
 
+-- Drop existing trigger if it exists (for idempotent script execution)
+DROP TRIGGER IF EXISTS update_documents_updated_at ON documents;
 CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON documents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -107,6 +109,8 @@ CREATE TABLE IF NOT EXISTS crawl_jobs (
 CREATE INDEX IF NOT EXISTS crawl_jobs_status_idx ON crawl_jobs(status);
 CREATE INDEX IF NOT EXISTS crawl_jobs_created_at_idx ON crawl_jobs(created_at DESC);
 
+-- Drop existing trigger if it exists (for idempotent script execution)
+DROP TRIGGER IF EXISTS update_crawl_jobs_updated_at ON crawl_jobs;
 CREATE TRIGGER update_crawl_jobs_updated_at BEFORE UPDATE ON crawl_jobs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
