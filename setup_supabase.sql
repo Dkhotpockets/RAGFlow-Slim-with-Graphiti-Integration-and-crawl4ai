@@ -1,8 +1,16 @@
 -- Supabase Setup for RAGFlow Slim
 -- Run this in your Supabase SQL Editor
+--
+-- This is the initial setup script. After running this, also run:
+-- - supabase_enable_rls.sql (for security hardening)
 
--- Enable pgvector extension
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Create extensions schema for better security isolation
+CREATE SCHEMA IF NOT EXISTS extensions;
+
+-- Enable pgvector extension in extensions schema (recommended)
+-- If you need it in public schema for compatibility, use:
+-- CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
 -- Create documents table with vector embeddings
 CREATE TABLE IF NOT EXISTS documents (
@@ -25,8 +33,9 @@ CREATE INDEX IF NOT EXISTS documents_metadata_idx ON documents USING gin(metadat
 -- Create index for created_at for sorting
 CREATE INDEX IF NOT EXISTS documents_created_at_idx ON documents(created_at DESC);
 
--- Create RPC function for vector similarity search
-CREATE OR REPLACE FUNCTION match_documents(
+-- Create RPC function for vector similarity search with secure search_path
+-- Note: This will be recreated with enhanced security in supabase_enable_rls.sql
+CREATE OR REPLACE FUNCTION public.match_documents(
   query_embedding vector(1536),
   match_threshold float DEFAULT 0.0,
   match_count int DEFAULT 10
@@ -38,28 +47,36 @@ RETURNS TABLE (
   embedding vector,
   similarity float
 )
-LANGUAGE SQL STABLE
+LANGUAGE SQL 
+STABLE
+SECURITY DEFINER
+SET search_path = public, extensions, pg_catalog
 AS $$
   SELECT
-    id,
-    text,
-    metadata,
-    embedding,
-    1 - (embedding <=> query_embedding) AS similarity
-  FROM documents
-  WHERE 1 - (embedding <=> query_embedding) > match_threshold
-  ORDER BY embedding <=> query_embedding
+    documents.id,
+    documents.text,
+    documents.metadata,
+    documents.embedding,
+    1 - (documents.embedding <=> query_embedding) AS similarity
+  FROM public.documents
+  WHERE 1 - (documents.embedding <=> query_embedding) > match_threshold
+  ORDER BY documents.embedding <=> query_embedding
   LIMIT match_count;
 $$;
 
--- Create trigger to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- Create trigger function to update updated_at timestamp with secure search_path
+-- Note: This will be recreated with enhanced security in supabase_enable_rls.sql
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
-    NEW.updated_at = timezone('utc'::text, now());
+    NEW.updated_at = pg_catalog.timezone('utc'::text, pg_catalog.now());
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
 CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON documents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
