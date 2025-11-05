@@ -47,8 +47,18 @@ services:
       - CRAWL4AI_SUPPORTED_CONTENT_TYPES=text/html,application/xhtml+xml,text/plain
       - CRAWL4AI_RATE_LIMIT_PER_MINUTE=60
       - CRAWL4AI_RATE_LIMIT_BURST=10
+      # Security
+      - RAGFLOW_API_KEY=${RAGFLOW_API_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
     extra_hosts:
       - "host.docker.internal:host-gateway"  # For accessing host Ollama on Linux
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
   ragflow-mysql:
     image: mysql:8.0.39

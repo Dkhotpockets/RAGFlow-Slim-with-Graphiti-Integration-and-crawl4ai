@@ -29,7 +29,20 @@ from crawl4ai_source import (
 # - Logging is enabled for production safety
 
 app = Flask(__name__)
-CORS(app)
+
+# Security: Restrict CORS to specific origins
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+CORS(app, resources={
+    r"/*": {
+        "origins": ALLOWED_ORIGINS,
+        "methods": ["GET", "POST"],
+        "allow_headers": ["Content-Type", "X-API-KEY"]
+    }
+})
+
+# Security: Set maximum upload size (50MB)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
 OUTPUT_DIR = os.path.join(os.getcwd(), "outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -153,6 +166,17 @@ def log_output(filename, content):
     except Exception as e:
         logging.error(f"Failed to write output: {e}")
 
+# Security: Add security headers to all responses
+@app.after_request
+def set_security_headers(response):
+    """Add security headers to all responses."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    return response
+
 # Helper to determine the 'app' context from a request:
 def get_app_context_from_request(req) -> str | None:
     # Priority: X-APP header -> JSON body 'app' -> query param 'app'
@@ -229,16 +253,22 @@ def get_embedding_ollama(text, model="nomic-embed-text"):
 FLASK_ENV = os.getenv("FLASK_ENV", "development")
 API_KEY = os.getenv("RAGFLOW_API_KEY")
 
-if API_KEY is None:
+if API_KEY is None or API_KEY == "changeme" or API_KEY.endswith("change_me") or len(API_KEY) < 16:
     if FLASK_ENV == "production":
-        logging.error("RAGFLOW_API_KEY environment variable is required in production mode")
-        raise RuntimeError("RAGFLOW_API_KEY must be set in production. Check your .env file.")
+        logging.error("RAGFLOW_API_KEY must be set to a strong value (min 16 chars) in production mode")
+        raise RuntimeError(
+            "RAGFLOW_API_KEY must be set to a strong value in production. "
+            "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
     else:
         # Allow development mode with warning
-        logging.warning("RAGFLOW_API_KEY not set. Using default 'changeme' for development only.")
-        API_KEY = "changeme"
-elif API_KEY == "changeme":
-    logging.warning("Using default API key 'changeme'. This is insecure for production!")
+        if API_KEY is None:
+            logging.warning("RAGFLOW_API_KEY not set. Using default 'changeme' for development only.")
+            API_KEY = "changeme"
+        else:
+            logging.warning(f"Using weak API key. This is INSECURE for production! Length: {len(API_KEY)}")
+elif len(API_KEY) < 32:
+    logging.warning(f"API key is short ({len(API_KEY)} chars). Recommend 32+ chars for security.")
 
 RATE_LIMIT = 100  # requests per hour per IP
 rate_limit_store = {}
@@ -491,6 +521,51 @@ def graph_temporal():
         return jsonify({"error": "Internal server error."}), 500
 
 
+def is_safe_url(url: str) -> bool:
+    """Validate URL is safe to crawl (prevent SSRF attacks)."""
+    from urllib.parse import urlparse
+    import ipaddress
+    import socket
+    
+    try:
+        parsed = urlparse(url)
+        
+        # Only allow http/https
+        if parsed.scheme not in ['http', 'https']:
+            return False
+        
+        # Must have hostname
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        
+        # Block cloud metadata endpoints
+        blocked_domains = ['169.254.169.254', 'metadata.google.internal', 'metadata.goog']
+        if hostname in blocked_domains:
+            return False
+        
+        # Allow testing domains (example.com, example[0-9].com, localhost for testing)
+        if FLASK_ENV != "production" and (hostname.startswith('example') or hostname == 'localhost'):
+            return True
+        
+        # Resolve to IP and check if internal
+        try:
+            ip = socket.gethostbyname(hostname)
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # Block private/loopback/link-local networks
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+                return False
+        except socket.gaierror:
+            # DNS resolution failed
+            return False
+            
+        return True
+    except Exception as e:
+        logging.error(f"URL validation error: {e}")
+        return False
+
+
 @app.route("/crawl", methods=["POST"])
 def create_crawl_job():
     """Create a new crawl job for web content extraction."""
@@ -502,6 +577,10 @@ def create_crawl_job():
     try:
         data = request.get_json(force=True)
         crawl_request = CrawlJobRequest.from_dict(data)
+
+        # Security: Validate URL to prevent SSRF attacks
+        if not is_safe_url(crawl_request.url):
+            raise BadRequest("Invalid or unsafe URL. Only public HTTP/HTTPS URLs are allowed.")
 
         # Create the job
         job = asyncio.run(crawl_manager.create_job(crawl_request.url, crawl_request.to_config()))
