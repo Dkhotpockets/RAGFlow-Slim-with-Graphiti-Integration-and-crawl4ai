@@ -132,6 +132,13 @@ FLASK_ENV=production RAGFLOW_API_KEY=weak python app.py
 7. Container vulnerability scanning
 8. Dependency security scanning (Safety, Bandit)
 
+### Supabase Row Level Security (RLS):
+**Added:** November 5, 2025
+- Created `supabase_enable_rls.sql` to enable RLS on `documents` and `crawl_jobs` tables
+- Prevents unauthorized access via anonymous Supabase key
+- Service role maintains full access for backend operations
+- Run this SQL file in your Supabase SQL Editor after initial setup
+
 ### Recommended next steps:
 ```bash
 # Install security tools

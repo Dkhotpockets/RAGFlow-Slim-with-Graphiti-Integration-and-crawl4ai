@@ -506,6 +506,30 @@ ragflow-neo4j:
 
 ## Support
 
+## 🔒 Secret Management & Best Practices
+
+### Environment Variables & .env Usage
+- **Never commit real credentials**: Always use `.env.example` as a template. Real secrets go in your local `.env`, which is gitignored.
+- **.env is in .gitignore**: The project `.gitignore` ensures `.env`, `.env.local`, and all environment-specific files are never committed.
+- **Regenerate credentials if exposed**: If secrets are ever committed, immediately rotate them and follow the removal steps in `SECURITY_FIXES.md`.
+- **Use strong, unique values**: Generate API keys and passwords using the provided Python commands in `SECURITY_SETUP.md`.
+- **Rotate credentials regularly**: Change all secrets every 90 days or if compromise is suspected.
+
+### Contributor Checklist (Preventing Secret Exposure)
+- [ ] Never commit `.env` or real credentials
+- [ ] Use `.env.example` for templates only
+- [ ] Confirm `.env` is in `.gitignore` before pushing
+- [ ] Rotate and update credentials after onboarding/offboarding
+- [ ] Review `SECURITY_SETUP.md` and `SECURITY_FIXES.md` before contributing
+- [ ] Use pre-commit hooks or secret scanning tools (e.g., [git-secrets](https://github.com/awslabs/git-secrets))
+
+### Further Reading
+- [SECURITY_SETUP.md](SECURITY_SETUP.md): Full security setup and credential management
+- [SECURITY_FIXES.md](SECURITY_FIXES.md): Incident response and credential rotation
+- [REVIEW_SUMMARY.md](REVIEW_SUMMARY.md): Security review and validation
+
+**Following these practices is mandatory for all contributors.**
+
 For integration questions, see:
 - **CLAUDE.md** - AI assistant guide
 - **README.md** - General overview

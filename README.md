@@ -78,7 +78,9 @@ from supabase_client import search_documents_supabase
 
 3. **Run the Supabase setup** (one-time)
 
-   Execute `setup_supabase.sql` in your Supabase SQL Editor to create the necessary tables.
+   Execute these SQL files in your Supabase SQL Editor:
+   - `setup_supabase.sql` - Creates the necessary tables and functions
+   - `supabase_enable_rls.sql` - Enables Row Level Security (required for production)
 
 4. **Start RAGFlow services**
 
@@ -265,6 +267,30 @@ allowing a dedicated contract test run when desired.
 4. Submit a pull request
 
 ## 📚 Documentation
+
+## 🔒 Secret Management & Best Practices
+
+### Environment Variables & .env Usage
+- **Never commit real credentials**: Always use `.env.example` as a template. Real secrets go in your local `.env`, which is gitignored.
+- **.env is in .gitignore**: The project `.gitignore` ensures `.env`, `.env.local`, and all environment-specific files are never committed.
+- **Regenerate credentials if exposed**: If secrets are ever committed, immediately rotate them and follow the removal steps in `SECURITY_FIXES.md`.
+- **Use strong, unique values**: Generate API keys and passwords using the provided Python commands in `SECURITY_SETUP.md`.
+- **Rotate credentials regularly**: Change all secrets every 90 days or if compromise is suspected.
+
+### Contributor Checklist (Preventing Secret Exposure)
+- [ ] Never commit `.env` or real credentials
+- [ ] Use `.env.example` for templates only
+- [ ] Confirm `.env` is in `.gitignore` before pushing
+- [ ] Rotate and update credentials after onboarding/offboarding
+- [ ] Review `SECURITY_SETUP.md` and `SECURITY_FIXES.md` before contributing
+- [ ] Use pre-commit hooks or secret scanning tools (e.g., [git-secrets](https://github.com/awslabs/git-secrets))
+
+### Further Reading
+- [SECURITY_SETUP.md](SECURITY_SETUP.md): Full security setup and credential management
+- [SECURITY_FIXES.md](SECURITY_FIXES.md): Incident response and credential rotation
+- [REVIEW_SUMMARY.md](REVIEW_SUMMARY.md): Security review and validation
+
+**Following these practices is mandatory for all contributors.**
 
 - [Graphiti Integration Guide](GRAPHITI_INTEGRATION.md)
 - [Graphiti Quick Start](GRAPHITI_QUICKSTART.md)
