@@ -5,7 +5,9 @@
       "Bash(chmod:*)",
       "Bash(python -m pytest:*)",
       "Bash(python -c:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
