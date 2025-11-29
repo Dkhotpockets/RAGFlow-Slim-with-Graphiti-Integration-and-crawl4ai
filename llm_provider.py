@@ -4,7 +4,7 @@ Supports: OpenAI, Google AI (Gemini), Ollama
 """
 import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class LLMConfig:
                 "model": "text-embedding-004"
             }
         else:
-            raise ValueError(f"No embeddings provider available")
+            raise ValueError("No embeddings provider available")
     
     def get_provider_info(self) -> Dict[str, Any]:
         """Get current provider information for logging/debugging."""

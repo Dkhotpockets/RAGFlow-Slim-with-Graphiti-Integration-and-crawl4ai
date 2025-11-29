@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os, datetime, json, logging, asyncio
+import os
+import datetime
+import json
+import logging
+import asyncio
 from werkzeug.exceptions import BadRequest
 
 
@@ -8,11 +12,13 @@ from werkzeug.exceptions import BadRequest
 # - All input/output operations are sanitized and path-safe
 # - Document ingestion and retrieval logic is modular and ready for extension
 import uuid
+
 try:
-    import PyPDF2
+    from pypdf import PdfReader
 except ImportError:
-    PyPDF2 = None
-from supabase_client import add_document_to_supabase, search_documents_supabase
+    PdfReader = None
+
+from supabase_client import add_document_to_supabase, search_documents_supabase, supabase as supabase_client
 from graphiti_client import (
     add_episode, 
     search_graph, 
@@ -47,7 +53,6 @@ OUTPUT_DIR = os.path.join(os.getcwd(), "outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Initialize CrawlJobManager with Supabase client
-from supabase_client import supabase as supabase_client
 crawl_manager = CrawlJobManager(supabase_client)
 
 # Configuration directory for bootstrap files (can be mounted as a Docker volume)
@@ -187,8 +192,8 @@ def get_app_context_from_request(req) -> str | None:
         j = req.get_json(silent=True) or {}
         if isinstance(j, dict) and j.get("app"):
             return j.get("app")
-    except Exception:
-        pass
+    except Exception as e:
+        logging.debug(f"Failed to parse JSON body for app context: {e}")
     app = req.args.get("app")
     return app
 
@@ -271,7 +276,7 @@ elif len(API_KEY) < 32:
     logging.warning(f"API key is short ({len(API_KEY)} chars). Recommend 32+ chars for security.")
 
 RATE_LIMIT = 100  # requests per hour per IP
-rate_limit_store = {}
+rate_limit_store: dict[str, list[float]] = {}
 
 def authenticate():
     key = request.headers.get("X-API-KEY")
@@ -336,10 +341,10 @@ def ingest():
                 file.seek(0)
                 text = file.read().decode("latin-1", errors="ignore")
         elif ext == "pdf":
-            if PyPDF2 is None:
-                raise BadRequest("PyPDF2 not installed. PDF support unavailable.")
+            if PdfReader is None:
+                raise BadRequest("pypdf not installed. PDF support unavailable.")
             try:
-                pdf = PyPDF2.PdfReader(file.stream)
+                pdf = PdfReader(file.stream)
                 text = "\n".join(page.extract_text() or "" for page in pdf.pages)
             except Exception as e:
                 logging.error(f"PDF parsing error: {e}")

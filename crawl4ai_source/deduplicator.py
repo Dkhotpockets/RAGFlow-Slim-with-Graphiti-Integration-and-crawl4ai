@@ -7,7 +7,7 @@ content from being stored, using content hashing and similarity analysis.
 
 import hashlib
 import logging
-from typing import List, Optional, Set
+from typing import Optional
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 

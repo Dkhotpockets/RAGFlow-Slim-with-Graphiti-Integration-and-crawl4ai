@@ -1,6 +1,6 @@
 flask
 werkzeug
-PyPDF2
+pypdf
 requests
 supabase
 graphiti-core

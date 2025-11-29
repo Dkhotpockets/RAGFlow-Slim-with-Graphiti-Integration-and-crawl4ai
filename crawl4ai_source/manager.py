@@ -320,7 +320,7 @@ class CrawlJobManager:
             }
 
             # Store in Supabase vector storage
-            response = add_document_to_supabase(result.content, metadata=metadata, embedding=embedding)
+            add_document_to_supabase(result.content, metadata=metadata, embedding=embedding)
 
             logger.info(f"Successfully stored crawled content from {result.url} in Supabase vector storage")
 

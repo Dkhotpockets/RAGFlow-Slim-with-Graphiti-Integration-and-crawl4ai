@@ -10,7 +10,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)

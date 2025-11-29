@@ -5,7 +5,6 @@ This module provides the core crawling service that uses Crawl4AI to extract
 content from web pages and return structured results.
 """
 
-import asyncio
 import hashlib
 import time
 from typing import Optional
@@ -203,8 +202,10 @@ class CrawlService:
             links = list(set(links))
             # Could add filtering for internal/external links here
 
-        except Exception:
-            pass
+        except Exception as e:
+            # Log link extraction failures but don't fail the crawl
+            import logging
+            logging.debug(f"Failed to extract links: {e}")
 
         return links
 

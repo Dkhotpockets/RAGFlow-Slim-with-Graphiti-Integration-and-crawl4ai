@@ -8,7 +8,6 @@ from typing import Optional, List, Dict, Any
 
 try:
     from graphiti_core import Graphiti
-    from graphiti_core.nodes import EpisodeType
     from graphiti_core.llm_client import OpenAIClient, LLMConfig
     from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
     
