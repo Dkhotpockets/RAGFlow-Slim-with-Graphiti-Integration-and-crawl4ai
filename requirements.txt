@@ -5,8 +5,7 @@
 #    pip-compile --generate-hashes --output-file=requirements.txt requirements.in
 #
 aiofiles==24.1.0 \
-    --hash=sha256:01c2c8d18ee1e6ca7fd4fd947bcdca5d8c5bc8e67d0f09c4c2bfe61e1dae3a73 \
-    --hash=sha256:a79cdf3d7b07ce10c1eb1a1f0e333f95b9e5a2c7fb3b9a3bcd4b9d64e8e00cb2
+    --hash=sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5
     # via crawl4ai
 aiohappyeyeballs==2.6.1 \
     --hash=sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558 \
