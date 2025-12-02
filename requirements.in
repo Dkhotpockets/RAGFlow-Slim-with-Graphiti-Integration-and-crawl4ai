@@ -9,3 +9,4 @@ flask-cors
 google-generativeai
 google-genai
 crawl4ai
+pytest
